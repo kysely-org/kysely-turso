@@ -1,0 +1,72 @@
+{
+  "name": "kysely-turso",
+  "version": "0.0.0",
+  "description": "",
+  "type": "module",
+  "repository": "git://github.com/kysely-org/kysely-turso.git",
+  "homepage": "https://kysely.dev",
+  "author": "Igal Klebanov <igalklebanov@gmail.com> (https://github.com/igalklebanov)",
+  "license": "MIT",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "kysely",
+    "turso",
+    "sqlite",
+    "libsql",
+    "limbo",
+    "dialect",
+    "query builder",
+    "query",
+    "sql",
+    "typescript",
+    "type-safe",
+    "type-safety"
+  ],
+  "scripts": {
+    "biome": "biome",
+    "build": "tsup",
+    "check:exports": "attw . --pack",
+    "check:types": "tsc --noEmit",
+    "prepublishOnly": "biome check && pnpm build && pnpm check:exports",
+    "test": "pnpm test:node --run && pnpm test:bun --run",
+    "test:bun": "bun --bun vitest",
+    "test:node": "vitest"
+  },
+  "peerDependencies": {
+    "kysely": "^0.28"
+  },
+  "peerDependenciesMeta": {},
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.2",
+    "@biomejs/biome": "^2.2.2",
+    "@tsconfig/node24": "^24.0.1",
+    "@types/node": "^24.3.0",
+    "kysely": "^0.28.5",
+    "std-env": "^3.9.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.15.1+sha512.34e538c329b5553014ca8e8f4535997f96180a1d0f614339357449935350d924e22f8614682191264ec33d1462ac21561aff97f6bb18065351c162c7e8f6de67"
+}
