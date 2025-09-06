@@ -3,6 +3,9 @@
 	"files": {
 		"includes": ["**", "!**/.vscode", "!**/package.json", "!**/tsconfig*.json"]
 	},
+	"formatter": {
+		"formatWithErrors": true
+	},
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "single",
