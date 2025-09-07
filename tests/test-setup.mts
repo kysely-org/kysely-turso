@@ -1,7 +1,7 @@
 import { createClient } from '@libsql/client'
 import { createClient as createCompatClient } from '@tursodatabase/serverless/compat'
 import { type Dialect, type Generated, Kysely } from 'kysely'
-import { LibSQLDialect } from '../src/libsql-dialect.mjs'
+import { LibSQLDialect } from '..'
 
 const URL = 'http://127.0.0.1:8080'
 

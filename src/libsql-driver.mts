@@ -1,80 +1,74 @@
-import type {
-	CompiledQuery,
-	DatabaseConnection,
-	Driver,
-	QueryCompiler,
-	QueryResult,
-	TransactionSettings,
+import {
+	type CompiledQuery,
+	type DatabaseConnection,
+	type QueryResult,
+	SqliteDriver,
+	type TransactionSettings,
 } from 'kysely'
 import type {
 	LibSQLClient,
 	LibSQLDialectConfig,
+	LibSQLTransaction,
 } from './libsql-dialect-config.mjs'
 
-export class LibSQLDriver implements Driver {
+const BEGIN_TRANSACITON_SYMBOL = Symbol('begin')
+const COMMIT_TRANSACTION_SYMBOL = Symbol('commit')
+const ROLLBACK_TRANSACTION_SYMBOL = Symbol('rollback')
+
+export class LibSQLDriver extends SqliteDriver {
 	readonly #config: LibSQLDialectConfig
 	#client: LibSQLClient | undefined
 
 	constructor(config: LibSQLDialectConfig) {
+		super({} as never)
 		this.#config = config
 	}
 
-	async acquireConnection(): Promise<DatabaseConnection> {
+	override async acquireConnection(): Promise<DatabaseConnection> {
 		// biome-ignore lint/style/noNonNullAssertion: `init` has already run at this point.
 		return new LibSQLDatabaseConnection(this.#client!)
 	}
 
-	async beginTransaction(
+	// @ts-expect-error needs to be fixed in core driver.
+	override async beginTransaction(
 		connection: DatabaseConnection,
 		settings: TransactionSettings,
 	): Promise<void> {
-		throw new Error('unimplemented!')
+		await (connection as LibSQLDatabaseConnection)[BEGIN_TRANSACITON_SYMBOL](
+			settings,
+		)
 	}
 
-	async commitTransaction(connection: DatabaseConnection): Promise<void> {
-		throw new Error('unimplemented!')
+	override async commitTransaction(
+		connection: DatabaseConnection,
+	): Promise<void> {
+		await (connection as LibSQLDatabaseConnection)[COMMIT_TRANSACTION_SYMBOL]()
 	}
 
-	async destroy(): Promise<void> {
+	override async destroy(): Promise<void> {
+		if (this.#client?.closed) {
+			return
+		}
+
 		this.#client?.close()
 	}
 
-	async init(): Promise<void> {
+	override async init(): Promise<void> {
 		const { client } = this.#config
 
 		this.#client = isClient(client) ? client : await client()
 	}
 
-	async releaseConnection(): Promise<void> {
+	override async releaseConnection(): Promise<void> {
 		// noop
 	}
 
-	async releaseSavepoint(
+	override async rollbackTransaction(
 		connection: DatabaseConnection,
-		savepointName: string,
-		compileQuery: QueryCompiler['compileQuery'],
 	): Promise<void> {
-		throw new Error('unimplemented')
-	}
-
-	async rollbackToSavepoint(
-		connection: DatabaseConnection,
-		savepointName: string,
-		compileQuery: QueryCompiler['compileQuery'],
-	): Promise<void> {
-		throw new Error('unimplemented')
-	}
-
-	async rollbackTransaction(connection: DatabaseConnection): Promise<void> {
-		throw new Error('unimplemented')
-	}
-
-	async savepoint(
-		connection: DatabaseConnection,
-		savepointName: string,
-		compileQuery: QueryCompiler['compileQuery'],
-	): Promise<void> {
-		throw new Error('unimplemented')
+		await (connection as LibSQLDatabaseConnection)[
+			ROLLBACK_TRANSACTION_SYMBOL
+		]()
 	}
 }
 
@@ -84,15 +78,17 @@ function isClient(thing: unknown): thing is LibSQLClient {
 
 class LibSQLDatabaseConnection implements DatabaseConnection {
 	readonly #client: LibSQLClient
+	#transaction: LibSQLTransaction | undefined
 
 	constructor(client: LibSQLClient) {
 		this.#client = client
 	}
 
 	async executeQuery<R>(compiledQuery: CompiledQuery): Promise<QueryResult<R>> {
-		const result = await this.#client.execute(compiledQuery.sql, [
-			...compiledQuery.parameters,
-		])
+		const result = await (this.#transaction || this.#client).execute({
+			args: [...compiledQuery.parameters],
+			sql: compiledQuery.sql,
+		})
 
 		const rows: R[] = []
 
@@ -114,9 +110,27 @@ class LibSQLDatabaseConnection implements DatabaseConnection {
 	}
 
 	streamQuery<R>(
-		compiledQuery: CompiledQuery,
-		chunkSize?: number,
+		_compiledQuery: CompiledQuery,
+		_chunkSize?: number,
 	): AsyncIterableIterator<QueryResult<R>> {
-		throw new Error('unimplemented!')
+		throw new Error('LibSQLDialect does not support streaming.')
+	}
+
+	async [BEGIN_TRANSACITON_SYMBOL](
+		settings: TransactionSettings,
+	): Promise<void> {
+		this.#transaction = await this.#client.transaction(
+			settings.accessMode === 'read only' ? 'read' : 'write',
+		)
+	}
+
+	async [COMMIT_TRANSACTION_SYMBOL](): Promise<void> {
+		await this.#transaction?.commit()
+		this.#transaction = undefined
+	}
+
+	async [ROLLBACK_TRANSACTION_SYMBOL](): Promise<void> {
+		await this.#transaction?.rollback()
+		this.#transaction = undefined
 	}
 }
