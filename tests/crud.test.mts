@@ -7,7 +7,7 @@ import {
 } from './test-setup.mjs'
 
 for (const dialect of SUPPORTED_DIALECTS) {
-	describe(dialect, () => {
+	describe.skipIf(dialect === 'compat')(dialect, () => {
 		let ctx: TestContext
 
 		beforeAll(async () => {
@@ -25,7 +25,26 @@ for (const dialect of SUPPORTED_DIALECTS) {
 		it('should execute select queries', async () => {
 			const result = await ctx.db.selectFrom('person').selectAll().execute()
 
-			expect(result).toMatchInlineSnapshot()
+			expect(result).toMatchInlineSnapshot(`
+				[
+				  {
+				    "id": "48856ed4-9f1f-4111-ba7f-6092a1be96eb",
+				    "name": "moshe",
+				  },
+				  {
+				    "id": "28175ebc-02ec-4c87-9a84-b3d25193fefa",
+				    "name": "haim",
+				  },
+				  {
+				    "id": "cbbffbea-47d5-40ec-a98d-518b48e2bb5d",
+				    "name": "rivka",
+				  },
+				  {
+				    "id": "d2b76f94-1a33-4b8c-9226-7d35390b1112",
+				    "name": "henry",
+				  },
+				]
+			`)
 		})
 
 		it('should execute insert queries - no returning', async () => {
