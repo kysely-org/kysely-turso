@@ -11,7 +11,7 @@ import type {
 	LibSQLTransaction,
 } from './libsql-dialect-config.mjs'
 
-const BEGIN_TRANSACITON_SYMBOL = Symbol('begin')
+const BEGIN_TRANSACTION_SYMBOL = Symbol('begin')
 const COMMIT_TRANSACTION_SYMBOL = Symbol('commit')
 const ROLLBACK_TRANSACTION_SYMBOL = Symbol('rollback')
 
@@ -34,7 +34,7 @@ export class LibSQLDriver extends SqliteDriver {
 		connection: DatabaseConnection,
 		settings: TransactionSettings,
 	): Promise<void> {
-		await (connection as LibSQLDatabaseConnection)[BEGIN_TRANSACITON_SYMBOL](
+		await (connection as LibSQLDatabaseConnection)[BEGIN_TRANSACTION_SYMBOL](
 			settings,
 		)
 	}
@@ -116,7 +116,7 @@ class LibSQLDatabaseConnection implements DatabaseConnection {
 		throw new Error('LibSQLDialect does not support streaming.')
 	}
 
-	async [BEGIN_TRANSACITON_SYMBOL](
+	async [BEGIN_TRANSACTION_SYMBOL](
 		settings: TransactionSettings,
 	): Promise<void> {
 		this.#transaction = await this.#client.transaction(
