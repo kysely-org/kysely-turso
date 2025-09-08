@@ -1,4 +1,4 @@
-import { cp, readFile, writeFile } from 'node:fs/promises'
+import { access, cp, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'pathe'
 import { defineConfig } from 'tsup'
 
@@ -10,11 +10,13 @@ export default defineConfig({
 	async onSuccess() {
 		await Promise.all(
 			['libsql', 'serverless'].map(async (mod) => {
+				const sourceDirPath = join(__dirname, `dist/${mod}`)
 				const targetDirPath = join(__dirname, mod)
 
-				await cp(join(__dirname, `dist/${mod}`), targetDirPath, {
-					recursive: true,
-				})
+				// Wait for both .d.ts and .d.cts files to be generated
+				await waitForFiles(sourceDirPath, ['index.d.ts', 'index.d.cts'])
+
+				await cp(sourceDirPath, targetDirPath, { recursive: true })
 
 				const esmFilePath = join(targetDirPath, 'index.js')
 
@@ -31,3 +33,23 @@ export default defineConfig({
 		)
 	},
 })
+
+async function waitForFiles(
+	dirPath: string,
+	filenames: string[],
+): Promise<void> {
+	const checkFiles = async (): Promise<boolean> => {
+		try {
+			await Promise.all(
+				filenames.map((filename) => access(join(dirPath, filename))),
+			)
+			return true
+		} catch {
+			return false
+		}
+	}
+
+	while (!(await checkFiles())) {
+		await new Promise((resolve) => setTimeout(resolve, 100))
+	}
+}
