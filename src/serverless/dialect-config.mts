@@ -16,7 +16,7 @@ interface TursoServerlessStatement {
 	iterate: (args?: any[]) => AsyncGenerator<any>
 	// biome-ignore lint/suspicious/noExplicitAny: this is fine.
 	run: (args?: any[]) => Promise<{
-		changes: number;
+		changes: number
 		lastInsertRowid: bigint | undefined
 	}>
 }
