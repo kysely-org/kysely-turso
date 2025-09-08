@@ -1,15 +1,14 @@
-import {
-	type CompiledQuery,
-	type DatabaseConnection,
-	type Driver,
-	type QueryResult,
-	RawNode,
-	ReturningNode,
-	SelectQueryNode,
-	type TransactionSettings,
+import type {
+	CompiledQuery,
+	DatabaseConnection,
+	Driver,
+	QueryResult,
+	TransactionSettings,
 } from 'kysely'
+import { isValidIdentifier } from '../utils.mjs'
 import type {
 	TursoServerlessConnection,
+	TursoServerlessConnectionWithSession,
 	TursoServerlessDialectConfig,
 } from './dialect-config.mjs'
 
@@ -72,30 +71,39 @@ class TursoServerlessDatabaseConnection implements DatabaseConnection {
 	}
 
 	async executeQuery<R>(compiledQuery: CompiledQuery): Promise<QueryResult<R>> {
-		const { parameters, query, sql } = compiledQuery
+		const { parameters, sql } = compiledQuery
 
-		const statement = this.#connection.prepare(sql)
+		// we're hacking. session is unofficially exposed on connection.
+		// we're doing so because `prepare -> all/run` return an opinionated result. ({rows: Record<string, unknown>[]} / {changes: number; lastInsertRowid: bigint | undefined})
+		// such results require us to have logic that decides (gambles) which method to run.
+		// in future releases, it seems `connection` will expose `execute` directly.
+		// https://github.com/tursodatabase/turso/blob/b7c43cf293a4b627862a275333f6911c00289979/packages/turso-serverless/src/connection.ts#L77-L95
+		const result = await (
+			this.#connection as TursoServerlessConnectionWithSession
+		).session.execute(sql, [...parameters])
 
-		if (
-			SelectQueryNode.is(query) ||
-			RawNode.is(query) ||
-			('returning' in query &&
-				query.returning &&
-				ReturningNode.is(query.returning))
-		) {
-			const result = await statement.all([...parameters])
+		const { columns, lastInsertRowid, rows: valueTuples, rowsAffected } = result
 
-			return { rows: result }
+		const rows: R[] = []
+
+		for (const valueTuple of valueTuples) {
+			const row: Record<string, unknown> = {}
+
+			for (let i = 0, len = columns.length; i < len; i++) {
+				const column = columns[i]
+
+				if (isValidIdentifier(column)) {
+					row[column] = valueTuple[i]
+				}
+			}
+
+			rows.push(row as R)
 		}
-
-		const result = await statement.run([...parameters])
-
-		const { changes, lastInsertRowid } = result
 
 		return {
 			insertId: lastInsertRowid != null ? BigInt(lastInsertRowid) : undefined,
-			numAffectedRows: BigInt(changes),
-			rows: [],
+			numAffectedRows: BigInt(rowsAffected),
+			rows,
 		}
 	}
 
