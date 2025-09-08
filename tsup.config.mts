@@ -1,4 +1,5 @@
 import { access, cp, readFile, writeFile } from 'node:fs/promises'
+import { setTimeout } from 'node:timers/promises'
 import { join } from 'pathe'
 import { defineConfig } from 'tsup'
 
@@ -13,7 +14,6 @@ export default defineConfig({
 				const sourceDirPath = join(__dirname, `dist/${mod}`)
 				const targetDirPath = join(__dirname, mod)
 
-				// Wait for both .d.ts and .d.cts files to be generated
 				await waitForFiles(sourceDirPath, ['index.d.ts', 'index.d.cts'])
 
 				await cp(sourceDirPath, targetDirPath, { recursive: true })
@@ -50,6 +50,6 @@ async function waitForFiles(
 	}
 
 	while (!(await checkFiles())) {
-		await new Promise((resolve) => setTimeout(resolve, 100))
+		await setTimeout(100)
 	}
 }
