@@ -36,8 +36,5 @@ jobs:
       - name: Biome
         run: pnpm biome ci
 
-      - name: Build
-        run: pnpm build
-
       - name: Exports
-        run: pnpm check:exports
+        run: pnpm build && pnpm check:exports
