@@ -9,7 +9,7 @@ import type {
 	LibSQLClient,
 	LibSQLDialectConfig,
 	LibSQLTransaction,
-} from './libsql-dialect-config.mjs'
+} from './dialect-config.mjs'
 
 const BEGIN_TRANSACTION_SYMBOL = Symbol('begin')
 const COMMIT_TRANSACTION_SYMBOL = Symbol('commit')

@@ -9,9 +9,9 @@ import {
 	SqliteIntrospector,
 	SqliteQueryCompiler,
 } from 'kysely'
-import type { LibSQLDialectConfig } from './libsql-dialect-config.mjs'
-import { LibSQLDriver } from './libsql-driver.mjs'
-import { freeze } from './utils.mjs'
+import { freeze } from '../utils.mjs'
+import type { LibSQLDialectConfig } from './dialect-config.mjs'
+import { LibSQLDriver } from './driver.mjs'
 
 export class LibSQLDialect implements Dialect {
 	readonly #config: LibSQLDialectConfig

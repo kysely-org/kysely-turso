@@ -138,3 +138,8 @@ examples/**/*.db
 
 tsconfig.vitest-temp.json
 .attest
+
+libsql
+!src/libsql
+serverless
+!src/serverless

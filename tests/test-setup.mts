@@ -1,11 +1,20 @@
 import { createClient } from '@libsql/client'
+// @ts-expect-error the package doesn't provide any types.
+import { connect } from '@tursodatabase/database'
+import { connect as connectServerless } from '@tursodatabase/serverless'
 import { createClient as createCompatClient } from '@tursodatabase/serverless/compat'
-import { type Dialect, type Generated, Kysely } from 'kysely'
-import { LibSQLDialect } from '..'
+import { type Dialect, type Generated, Kysely, SqliteDialect } from 'kysely'
+import { LibSQLDialect } from '../libsql'
+import { TursoServerlessDialect } from '../serverless'
 
 const URL = 'http://127.0.0.1:8080'
 
-export const SUPPORTED_DIALECTS = ['compat', 'libsql'] as const
+export const SUPPORTED_DIALECTS = [
+	'compat',
+	'libsql',
+	'serverless',
+	// 'turso',
+] as const
 
 const DIALECTS = {
 	compat: new LibSQLDialect({
@@ -14,6 +23,13 @@ const DIALECTS = {
 	libsql: new LibSQLDialect({
 		client: () => createClient({ url: URL }),
 	}),
+	serverless: new TursoServerlessDialect({
+		connection: () =>
+			connectServerless({ authToken: '<not_really>', url: URL }),
+	}),
+	// turso: new SqliteDialect({
+	// 	database: () => connect(':memory:'),
+	// }),
 } as const satisfies Record<(typeof SUPPORTED_DIALECTS)[number], Dialect>
 
 export interface TestContext {
