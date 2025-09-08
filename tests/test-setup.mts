@@ -1,9 +1,14 @@
 import { createClient } from '@libsql/client'
-// @ts-expect-error the package doesn't provide any types.
-import { connect } from '@tursodatabase/database'
+// // @ts-expect-error the package doesn't provide any types.
+// import { connect } from '@tursodatabase/database'
 import { connect as connectServerless } from '@tursodatabase/serverless'
 import { createClient as createCompatClient } from '@tursodatabase/serverless/compat'
-import { type Dialect, type Generated, Kysely, SqliteDialect } from 'kysely'
+import {
+	type Dialect,
+	type Generated,
+	Kysely,
+	// SqliteDialect
+} from 'kysely'
 import { LibSQLDialect } from '../libsql'
 import { TursoServerlessDialect } from '../serverless'
 
@@ -16,6 +21,8 @@ export const SUPPORTED_DIALECTS = [
 	// 'turso',
 ] as const
 
+export type SupportedDialect = (typeof SUPPORTED_DIALECTS)[number]
+
 const DIALECTS = {
 	compat: new LibSQLDialect({
 		client: () => createCompatClient({ url: URL }),
@@ -27,10 +34,11 @@ const DIALECTS = {
 		connection: () =>
 			connectServerless({ authToken: '<not_really>', url: URL }),
 	}),
+	// seems like `@tursodatabase/database` is not ready to even be migrated.
 	// turso: new SqliteDialect({
 	// 	database: () => connect(':memory:'),
 	// }),
-} as const satisfies Record<(typeof SUPPORTED_DIALECTS)[number], Dialect>
+} as const satisfies Record<SupportedDialect, Dialect>
 
 export interface TestContext {
 	db: Kysely<Database>
@@ -44,7 +52,7 @@ export interface Database {
 }
 
 export async function initTest(
-	dialect: (typeof SUPPORTED_DIALECTS)[number],
+	dialect: SupportedDialect,
 ): Promise<TestContext> {
 	return { db: new Kysely({ dialect: DIALECTS[dialect] }) }
 }
