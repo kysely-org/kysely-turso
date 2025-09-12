@@ -7,7 +7,12 @@ import {
 } from './test-setup.mjs'
 
 for (const dialect of SUPPORTED_DIALECTS) {
-	describe.skipIf(dialect === 'compat')(dialect, () => {
+	describe.skipIf(
+		[
+			'compat', // always returns `[]`.
+			'turso', // Error: not implemented .. SqliteError: Parse error: RETURNING currently not implemented for DELETE statements.
+		].includes(dialect),
+	)(dialect, () => {
 		let ctx: TestContext
 
 		beforeAll(async () => {
@@ -15,7 +20,7 @@ for (const dialect of SUPPORTED_DIALECTS) {
 		})
 
 		beforeEach(async () => {
-			await resetState()
+			await resetState(dialect)
 		})
 
 		afterAll(async () => {
@@ -50,7 +55,7 @@ for (const dialect of SUPPORTED_DIALECTS) {
 		it('should execute insert queries - no returning', async () => {
 			const result = await ctx.db
 				.insertInto('person')
-				.values({ name: 'johnny' })
+				.values({ id: 'c260ee08-5c8a-4ed8-8415-575af63f22da', name: 'johnny' })
 				.executeTakeFirstOrThrow()
 
 			expect(result).toMatchInlineSnapshot(`
@@ -64,10 +69,7 @@ for (const dialect of SUPPORTED_DIALECTS) {
 		it('should execute insert queries - with returning', async () => {
 			const result = await ctx.db
 				.insertInto('person')
-				.values({
-					id: 'c260ee08-5c8a-4ed8-8415-575af63f22da',
-					name: 'duncan',
-				})
+				.values({ id: 'c260ee08-5c8a-4ed8-8415-575af63f22da', name: 'duncan' })
 				.returning('id')
 				.executeTakeFirstOrThrow()
 

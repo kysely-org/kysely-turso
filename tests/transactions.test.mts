@@ -8,34 +8,38 @@ import {
 } from './test-setup.mjs'
 
 for (const dialect of SUPPORTED_DIALECTS) {
-	describe.skipIf(dialect === 'compat' || dialect === 'serverless')(
-		dialect,
-		() => {
-			let ctx: TestContext
+	describe.skipIf(
+		[
+			'compat', // LibsqlError: Transactions not implemented
+			'serverless', // Error: TursoServerlessDriver does not support interactive transactions.
+			'turso', // Error: not implemented
+		].includes(dialect),
+	)(dialect, () => {
+		let ctx: TestContext
 
-			beforeAll(async () => {
-				ctx = await initTest(dialect)
+		beforeAll(async () => {
+			ctx = await initTest(dialect)
+		})
+
+		beforeEach(async () => {
+			await resetState(dialect)
+		})
+
+		afterAll(async () => {
+			await ctx.db.destroy()
+		})
+
+		it('should commit transactions', async () => {
+			await ctx.db.transaction().execute(async (trx) => {
+				await sql`delete from person`.execute(trx)
+				await sql`insert into person (id, name) values ('3af343af-e343-43d4-b0d3-ae1b813a000a', 'josh')`.execute(
+					trx,
+				)
 			})
 
-			beforeEach(async () => {
-				await resetState()
-			})
-
-			afterAll(async () => {
-				await ctx.db.destroy()
-			})
-
-			it('should commit transactions', async () => {
-				await ctx.db.transaction().execute(async (trx) => {
-					await sql`delete from person`.execute(trx)
-					await sql`insert into person (id, name) values ('3af343af-e343-43d4-b0d3-ae1b813a000a', 'josh')`.execute(
-						trx,
-					)
-				})
-
-				expect(
-					await sql`select * from person order by name`.execute(ctx.db),
-				).toMatchInlineSnapshot(`
+			expect(
+				await sql`select * from person order by name`.execute(ctx.db),
+			).toMatchInlineSnapshot(`
 					{
 					  "insertId": undefined,
 					  "numAffectedRows": 0n,
@@ -47,22 +51,22 @@ for (const dialect of SUPPORTED_DIALECTS) {
 					  ],
 					}
 				`)
-			})
+		})
 
-			it('should rollback transactions', async () => {
-				await expect(() =>
-					ctx.db.transaction().execute(async (trx) => {
-						await sql`delete from person`.execute(trx)
-						await sql`insert into person (id, name) values ('3af343af-e343-43d4-b0d3-ae1b813a000a', 'josh')`.execute(
-							trx,
-						)
-						throw new Error('oopsy')
-					}),
-				).rejects.toThrow('oopsy')
+		it('should rollback transactions', async () => {
+			await expect(() =>
+				ctx.db.transaction().execute(async (trx) => {
+					await sql`delete from person`.execute(trx)
+					await sql`insert into person (id, name) values ('3af343af-e343-43d4-b0d3-ae1b813a000a', 'josh')`.execute(
+						trx,
+					)
+					throw new Error('oopsy')
+				}),
+			).rejects.toThrow('oopsy')
 
-				expect(
-					await sql`select * from person order by name`.execute(ctx.db),
-				).toMatchInlineSnapshot(`
+			expect(
+				await sql`select * from person order by name`.execute(ctx.db),
+			).toMatchInlineSnapshot(`
 					{
 					  "insertId": undefined,
 					  "numAffectedRows": 0n,
@@ -86,26 +90,26 @@ for (const dialect of SUPPORTED_DIALECTS) {
 					  ],
 					}
 				`)
-			})
+		})
 
-			it('should use savepoints in transactions', async () => {
-				const trx = await ctx.db.startTransaction().execute()
+		it('should use savepoints in transactions', async () => {
+			const trx = await ctx.db.startTransaction().execute()
 
-				await sql`delete from person`.execute(trx)
+			await sql`delete from person`.execute(trx)
 
-				const afterDelete = await trx.savepoint('after delete').execute()
+			const afterDelete = await trx.savepoint('after delete').execute()
 
-				await sql`insert into person (id, name) values ('3af343af-e343-43d4-b0d3-ae1b813a000a', 'josh')`.execute(
-					afterDelete,
-				)
+			await sql`insert into person (id, name) values ('3af343af-e343-43d4-b0d3-ae1b813a000a', 'josh')`.execute(
+				afterDelete,
+			)
 
-				await afterDelete.releaseSavepoint('after delete').execute()
+			await afterDelete.releaseSavepoint('after delete').execute()
 
-				await trx.commit().execute()
+			await trx.commit().execute()
 
-				expect(
-					await sql`select * from person order by name`.execute(ctx.db),
-				).toMatchInlineSnapshot(`
+			expect(
+				await sql`select * from person order by name`.execute(ctx.db),
+			).toMatchInlineSnapshot(`
 					{
 					  "insertId": undefined,
 					  "numAffectedRows": 0n,
@@ -117,7 +121,6 @@ for (const dialect of SUPPORTED_DIALECTS) {
 					  ],
 					}
 				`)
-			})
-		},
-	)
+		})
+	})
 }
