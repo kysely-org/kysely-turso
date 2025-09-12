@@ -46,10 +46,12 @@ bun add kysely-turso @tursodatabase/serverless kysely
 
 ### @tursodatabase/serverless
 
+Interactive transactions are not supported as of `@tursodatabase/serveress@0.1.3`.
+
 ```ts
 import { connect } from '@tursodatabase/serverless'
 import { type GeneratedAlways, Kysely } from 'kysely'
-import { TursoServerlessDialect } from 'kysely-turso'
+import { TursoServerlessDialect } from 'kysely-turso/serverless'
 
 interface Database {
 	person: {
@@ -72,12 +74,14 @@ const db = new Kysely<Dataabase>({
 const people = await db.selectFrom("person").selectAll().execute();
 ```
 
-### @tursodatabase/serverless/compat OR @libsql/client
+### @tursodatabase/serverless/compat
+
+Signatures are defined, but nothing works as of `@tursodatabase/serveress@0.1.3`.
 
 ```ts
 import { createClient } from '@tursodatabase/serverless/compat'
 import { type GeneratedAlways, Kysely } from 'kysely'
-import { LibSQLialect } from 'kysely-turso'
+import { LibSQLialect } from 'kysely-turso/libsql'
 
 interface Database {
 	person: {
@@ -97,12 +101,12 @@ const db = new Kysely<Dataabase>({
 const people = await db.selectFrom("person").selectAll().execute();
 ```
 
-or...
+### @libsql/client
 
 ```ts
 import { createClient } from '@libsql/client'
 import { type GeneratedAlways, Kysely } from 'kysely'
-import { LibSQLialect } from 'kysely-turso'
+import { LibSQLialect } from 'kysely-turso/libsql'
 
 interface Database {
 	person: {
