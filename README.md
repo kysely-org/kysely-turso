@@ -1,4 +1,4 @@
-![description](./assets/banner.png)
+![A Kysely-branded yellow duck brainstorming startup ideas together with a the Turso creature thing.](./assets/banner.png)
 
 [![NPM Version](https://img.shields.io/npm/v/kysely-turso?style=flat&label=latest)](https://github.com/kysely-org/kysely-turso/releases/latest)
 [![Tests](https://github.com/kysely-org/kysely-turso/actions/workflows/test.yml/badge.svg)](https://github.com/kysely-org/kysely-turso)
