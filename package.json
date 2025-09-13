@@ -1,6 +1,6 @@
 {
   "name": "kysely-turso",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Kysely dialects for Turso",
   "type": "module",
   "repository": "git://github.com/kysely-org/kysely-turso.git",
