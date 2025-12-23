@@ -61,7 +61,7 @@ interface Database {
 	};
 }
 
-const db = new Kysely<Dataabase>({
+const db = new Kysely<Database>({
   dialect: new TursoServerlessDialect({
     connection: connect({ 
       authToken: process.env.TURSO_AUTH_TOKEN!,
@@ -91,7 +91,7 @@ interface Database {
 	};
 }
 
-const db = new Kysely<Dataabase>({
+const db = new Kysely<Database>({
   dialect: new LibSQLDialect({
     client: createClient({ url: process.env.TURSO_URL! }),
   }),
@@ -116,7 +116,7 @@ interface Database {
 	};
 }
 
-const db = new Kysely<Dataabase>({
+const db = new Kysely<Database>({
   dialect: new LibSQLDialect({
     client: createClient({ url: process.env.TURSO_URL! }),
   }),
